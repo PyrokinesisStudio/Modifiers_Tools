@@ -20,7 +20,7 @@
 bl_info = {
     "name": "Modifier Tools",
     "author": "Meta Androcto, saidenka",
-    "version": (0, 2, 0),
+    "version": (0, 2, 1),
     "blender": (2, 77, 0),
     "location": "Properties > Modifiers",
     "description": "Modifiers Specials Show/Hide/Apply Selected",
@@ -44,14 +44,19 @@ class ApplyAllModifiers(bpy.types.Operator):
         is_select, is_mod = False, False
         message_a, message_b = "", ""
 
-        for obj in context.selected_objects:
+        for obj in bpy.context.selected_objects:
             is_select = True
 
+            # copying context for the operator's override
+            contx = bpy.context.copy()
+            contx['object'] = obj
+
             for mod in obj.modifiers[:]:
+                contx['modifier'] = mod
                 is_mod = True
                 try:
-                    bpy.ops.object.modifier_apply({'object': obj}, apply_as='DATA',
-                                                  modifier=mod.name)
+                    bpy.ops.object.modifier_apply(contx, apply_as='DATA',
+                                                  modifier=contx['modifier'].name)
                 except:
                     message_b = "Applying modifiers has failed for some objects"
                     continue
@@ -66,6 +71,7 @@ class ApplyAllModifiers(bpy.types.Operator):
             return {'CANCELLED'}
 
         self.report(type={"INFO"}, message=(message_a if not message_b else message_b))
+
         return {'FINISHED'}
 
 
