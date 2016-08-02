@@ -28,10 +28,11 @@ bl_info = {
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6"
     "/Py/Scripts",
     "tracker_url": "https://developer.blender.org/maniphest/project/3/type/Bug/",
-    "category": "3D View"}
+    "category": "3D View"
+        }
 
 import bpy
-from mathutils import Vector, Matrix, Quaternion, Euler, Color
+
 
 class ApplyAllModifiers(bpy.types.Operator):
     bl_idname = "object.apply_all_modifiers"
@@ -41,21 +42,30 @@ class ApplyAllModifiers(bpy.types.Operator):
 
     def execute(self, context):
         is_select, is_mod = False, False
+        message_a, message_b = "", ""
+
         for obj in context.selected_objects:
             is_select = True
+
             for mod in obj.modifiers[:]:
                 is_mod = True
-                bpy.ops.object.modifier_apply(apply_as='DATA', modifier=mod.name)
+                try:
+                    bpy.ops.object.modifier_apply({'object': obj}, apply_as='DATA',
+                                                  modifier=mod.name)
+                except:
+                    message_b = "Applying modifiers has failed for some objects"
+                    continue
 
         if is_select:
             if is_mod:
-                self.report(type={"INFO"}, message="Applying modifiers on all Selected Objects")
+                message_a = "Applying modifiers on all Selected Objects"
             else:
-                self.report(type={"INFO"}, message="No Modifiers on Selected Objects")
+                message_a = "No Modifiers on Selected Objects"
         else:
             self.report(type={"INFO"}, message="No Selection. No changes applied")
             return {'CANCELLED'}
 
+        self.report(type={"INFO"}, message=(message_a if not message_b else message_b))
         return {'FINISHED'}
 
 
@@ -70,6 +80,8 @@ class DeleteAllModifiers(bpy.types.Operator):
 
     def execute(self, context):
         is_select, is_mod = False, False
+        message_a = ""
+
         for obj in context.selected_objects:
             is_select = True
             modifiers = obj.modifiers[:]
@@ -79,13 +91,14 @@ class DeleteAllModifiers(bpy.types.Operator):
 
         if is_select:
             if is_mod:
-                self.report(type={"INFO"}, message="Removing modifiers on all Selected Objects")
+                message_a = "Removing modifiers on all Selected Objects"
             else:
-                self.report(type={"INFO"}, message="No Modifiers on Selected Objects")
+                message_a = "No Modifiers on Selected Objects"
         else:
             self.report(type={"INFO"}, message="No Selection. No changes applied")
             return {'CANCELLED'}
 
+        self.report(type={"INFO"}, message=message_a)
         return {'FINISHED'}
 
 
@@ -97,6 +110,8 @@ class ToggleApplyModifiersView(bpy.types.Operator):
 
     def execute(self, context):
         is_apply = True
+        message_a = ""
+
         for mod in context.active_object.modifiers:
             if (mod.show_viewport):
                 is_apply = False
@@ -104,10 +119,13 @@ class ToggleApplyModifiersView(bpy.types.Operator):
         for obj in context.selected_objects:
             for mod in obj.modifiers:
                 mod.show_viewport = is_apply
+
         if is_apply:
-            self.report(type={"INFO"}, message="Applying modifiers to view")
+            message_a = "Applying modifiers to view"
         else:
-            self.report(type={"INFO"}, message="Unregistered modifiers apply to the view")
+            message_a = "Unregistered modifiers apply to the view"
+
+        self.report(type={"INFO"}, message=message_a)
         return {'FINISHED'}
 
 
@@ -134,26 +152,37 @@ class ToggleAllShowExpanded(bpy.types.Operator):
         else:
             self.report(type={'WARNING'}, message="Not a single modifier")
             return {'CANCELLED'}
+
         for area in context.screen.areas:
             area.tag_redraw()
         return {'FINISHED'}
 
-# menu
+
+# Menu #
 def menu(self, context):
 
     if (context.active_object):
         if (len(context.active_object.modifiers)):
             col = self.layout.column(align=True)
+
             row = col.row(align=True)
-            row.operator(ApplyAllModifiers.bl_idname, icon='IMPORT', text="Apply All")
-            row.operator(DeleteAllModifiers.bl_idname, icon='X', text="Delete All")
+            row.operator(ApplyAllModifiers.bl_idname,
+                         icon='IMPORT', text="Apply All")
+            row.operator(DeleteAllModifiers.bl_idname,
+                         icon='X', text="Delete All")
+
             row = col.row(align=True)
-            row.operator(ToggleApplyModifiersView.bl_idname, icon='RESTRICT_VIEW_OFF', text="Viewport Vis")
-            row.operator(ToggleAllShowExpanded.bl_idname, icon='FULLSCREEN_ENTER', text="Toggle Stack")
+            row.operator(ToggleApplyModifiersView.bl_idname,
+                         icon='RESTRICT_VIEW_OFF',
+                         text="Viewport Vis")
+            row.operator(ToggleAllShowExpanded.bl_idname,
+                         icon='FULLSCREEN_ENTER',
+                         text="Toggle Stack")
 
 
 def register():
     bpy.utils.register_module(__name__)
+
     # Add "Specials" menu to the "Modifiers" menu
     bpy.types.DATA_PT_modifiers.prepend(menu)
 
