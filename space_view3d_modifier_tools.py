@@ -28,13 +28,13 @@ bl_info = {
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6"
     "/Py/Scripts",
     "tracker_url": "https://developer.blender.org/maniphest/project/3/type/Bug/",
-    "category": "3D View"
-        }
+    "category": "3D View"}
 
 import bpy
+from bpy.types import Operator
 
 
-class ApplyAllModifiers(bpy.types.Operator):
+class ApplyAllModifiers(Operator):
     bl_idname = "object.apply_all_modifiers"
     bl_label = "Apply All"
     bl_description = "Apply All modifiers of the selected object(s)"
@@ -59,7 +59,7 @@ class ApplyAllModifiers(bpy.types.Operator):
                                                   modifier=contx['modifier'].name)
                 except:
                     message_b = "Applying modifiers has failed for some objects"
-                    continue
+                    pass
 
         if is_select:
             if is_mod:
@@ -75,7 +75,7 @@ class ApplyAllModifiers(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class DeleteAllModifiers(bpy.types.Operator):
+class DeleteAllModifiers(Operator):
     bl_idname = "object.delete_all_modifiers"
     bl_label = "Remove All"
     bl_description = "Remove All modifiers of the selected object(s)"
@@ -108,7 +108,7 @@ class DeleteAllModifiers(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ToggleApplyModifiersView(bpy.types.Operator):
+class ToggleApplyModifiersView(Operator):
     bl_idname = "object.toggle_apply_modifiers_view"
     bl_label = "Hide Viewport"
     bl_description = "Shows/Hide modifier of the selected object(s) in 3d View"
@@ -135,7 +135,7 @@ class ToggleApplyModifiersView(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ToggleAllShowExpanded(bpy.types.Operator):
+class ToggleAllShowExpanded(Operator):
     bl_idname = "wm.toggle_all_show_expanded"
     bl_label = "Expand/Collapse All"
     bl_description = "Expand/Collapse Modifier Stack"
@@ -164,7 +164,7 @@ class ToggleAllShowExpanded(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# Menu #
+# Menus #
 def menu(self, context):
 
     if (context.active_object):
@@ -186,17 +186,33 @@ def menu(self, context):
                          text="Toggle Stack")
 
 
+def menu_func(self, context):
+    if (context.active_object):
+        if (len(context.active_object.modifiers)):
+            layout = self.layout
+            layout.separator()
+            layout.operator(ApplyAllModifiers.bl_idname,
+                            icon='IMPORT',
+                            text="Apply All Modifiers")
+
+
 def register():
     bpy.utils.register_module(__name__)
 
     # Add "Specials" menu to the "Modifiers" menu
     bpy.types.DATA_PT_modifiers.prepend(menu)
 
+    # Add apply operator to the Apply 3D View Menu
+    bpy.types.VIEW3D_MT_object_apply.append(menu_func)
+
 
 def unregister():
+    # Remove "Specials" menu from the "Modifiers" menu.
     bpy.types.DATA_PT_modifiers.remove(menu)
 
-    # Remove "Specials" menu from the "Modifiers" menu.
+    # Remove apply operator to the Apply 3D View Menu
+    bpy.types.VIEW3D_MT_object_apply.remove(menu_func)
+
     bpy.utils.unregister_module(__name__)
 
 if __name__ == "__main__":
