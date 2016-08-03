@@ -43,6 +43,8 @@ class ApplyAllModifiers(Operator):
     def execute(self, context):
         is_select, is_mod = False, False
         message_a, message_b = "", ""
+        # collect names for objects failed to apply modifiers
+        collect_names = []
 
         for obj in bpy.context.selected_objects:
             is_select = True
@@ -58,7 +60,9 @@ class ApplyAllModifiers(Operator):
                     bpy.ops.object.modifier_apply(contx, apply_as='DATA',
                                                   modifier=contx['modifier'].name)
                 except:
-                    message_b = "Applying modifiers has failed for some objects"
+                    obj_name = getattr(obj, "name", "NO NAME")
+                    collect_names.append(obj_name)
+                    message_b = True
                     pass
 
         if is_select:
@@ -70,7 +74,16 @@ class ApplyAllModifiers(Operator):
             self.report(type={"INFO"}, message="No Selection. No changes applied")
             return {'CANCELLED'}
 
-        self.report(type={"INFO"}, message=(message_a if not message_b else message_b))
+        # applying failed for some objects, show report
+        message_obj = (",".join(collect_names) if collect_names and
+                       len(collect_names) < 8 else "some objects")
+
+        self.report(type={"INFO"}, message=(message_a if not message_b else
+                    "Applying modifiers failed for {}".format(message_obj)))
+
+        if (collect_names and message_obj == "some objects"):
+            print("\n** MODIFIER SPECIALS REPORT **\n Applying failed on:\n",
+                  ", ".join(collect_names))
 
         return {'FINISHED'}
 
