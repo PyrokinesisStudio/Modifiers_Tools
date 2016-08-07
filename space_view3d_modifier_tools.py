@@ -37,7 +37,8 @@ from bpy.types import Operator
 class ApplyAllModifiers(Operator):
     bl_idname = "object.apply_all_modifiers"
     bl_label = "Apply All"
-    bl_description = "Apply All modifiers of the selected object(s)"
+    bl_description = ("Apply All modifiers of the selected object(s) \n"
+                      "Active object has to have modifiers for menu to show up")
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -76,7 +77,7 @@ class ApplyAllModifiers(Operator):
 
         # applying failed for some objects, show report
         message_obj = (",".join(collect_names) if collect_names and
-                       len(collect_names) < 8 else "some objects")
+                       len(collect_names) < 8 else "some objects (Check System Console for more info)")
 
         self.report(type={"INFO"}, message=(message_a if not message_b else
                     "Applying modifiers failed for {}".format(message_obj)))
@@ -179,7 +180,6 @@ class ToggleAllShowExpanded(Operator):
 
 # Menus #
 def menu(self, context):
-
     if (context.active_object):
         if (len(context.active_object.modifiers)):
             col = self.layout.column(align=True)
