@@ -20,15 +20,16 @@
 bl_info = {
     "name": "Modifier Tools",
     "author": "Meta Androcto, saidenka",
-    "version": (0, 2, 1),
+    "version": (0, 2, 2),
     "blender": (2, 77, 0),
     "location": "Properties > Modifiers",
     "description": "Modifiers Specials Show/Hide/Apply Selected",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6"
-    "/Py/Scripts",
+    "/Py/Scripts/3D_interaction/modifier_tools",
     "tracker_url": "https://developer.blender.org/maniphest/task/edit/form/2/",
-    "category": "3D View"}
+    "category": "3D View"
+    }
 
 import bpy
 from bpy.types import Operator
@@ -77,14 +78,14 @@ class ApplyAllModifiers(Operator):
 
         # applying failed for some objects, show report
         message_obj = (",".join(collect_names) if collect_names and
-                       len(collect_names) < 8 else "some objects (Check System Console for more info)")
+                       len(collect_names) < 8 else "some objects (Check System Console)")
 
         self.report(type={"INFO"}, message=(message_a if not message_b else
                     "Applying modifiers failed for {}".format(message_obj)))
 
-        if (collect_names and message_obj == "some objects"):
-            print("\n** MODIFIER SPECIALS REPORT **\n Applying failed on:\n",
-                  ", ".join(collect_names))
+        if (collect_names and message_obj == "some objects (Check System Console)"):
+            print("\n** MODIFIERS TOOLS REPORT **\n\nApplying failed on:"
+                  "\n\n{} \n".format(", ".join(collect_names)))
 
         return {'FINISHED'}
 
@@ -125,7 +126,7 @@ class DeleteAllModifiers(Operator):
 class ToggleApplyModifiersView(Operator):
     bl_idname = "object.toggle_apply_modifiers_view"
     bl_label = "Hide Viewport"
-    bl_description = "Shows/Hide modifier of the selected object(s) in 3d View"
+    bl_description = "Shows/Hide modifiers of the active / selected object(s) in 3d View"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
@@ -133,17 +134,22 @@ class ToggleApplyModifiersView(Operator):
         message_a = ""
 
         for mod in context.active_object.modifiers:
-            if (mod.show_viewport):
+            if mod.show_viewport:
                 is_apply = False
                 break
+
+        # active object - no selection
+        for mod in context.active_object.modifiers:
+            mod.show_viewport = is_apply
+
         for obj in context.selected_objects:
             for mod in obj.modifiers:
                 mod.show_viewport = is_apply
 
         if is_apply:
-            message_a = "Applying modifiers to view"
+            message_a = "Displaying modifiers in the 3d View"
         else:
-            message_a = "Unregistered modifiers apply to the view"
+            message_a = "Hiding modifiers in the 3d View"
 
         self.report(type={"INFO"}, message=message_a)
         return {'FINISHED'}
